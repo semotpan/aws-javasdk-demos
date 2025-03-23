@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  PassengerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: passengers
+      AttributeDefinitions:
+        - AttributeName: EmailAddress
+          AttributeType: S
+      KeySchema:
+        - AttributeName: EmailAddress
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  FlightTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: flights
+      AttributeDefinitions:
+        - AttributeName: RouteByDay
+          AttributeType: S
+        - AttributeName: DepartureTime
+          AttributeType: S
+      KeySchema:
+        - AttributeName: RouteByDay
+          KeyType: HASH
+        - AttributeName: DepartureTime
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  BookingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: bookings
+      AttributeDefinitions:
+        - AttributeName: CustomerEmail
+          AttributeType: S
+        - AttributeName: BookingID
+          AttributeType: S
+        - AttributeName: FlightNumber
+          AttributeType: S # Adding FlightNumber to support other queries if needed
+      KeySchema:
+        - AttributeName: CustomerEmail
+          KeyType: HASH
+        - AttributeName: BookingID
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: BookingIDIndex
+          KeySchema:
+            - AttributeName: BookingID
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+
+Outputs:
+  PassengerTableName:
+    Value: !Ref PassengerTable
+    Description: "Passenger DynamoDB Table Name"
+
+  FlightTableName:
+    Value: !Ref FlightTable
+    Description: "Flight DynamoDB Table Name"
+
+  BookingTableName:
+    Value: !Ref BookingTable
+    Description: "Booking DynamoDB Table Name"

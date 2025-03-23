@@ -1,0 +1,31 @@
+version: "3.8"
+
+networks:
+  shared_network:
+    name: shared_network
+    driver: bridge
+
+services:
+  localstack:
+    container_name: localstack-airline-ddb-ops
+    image: localstack/localstack:4.0.3
+    ports:
+      - "127.0.0.1:4510-4559:4510-4559"  # external service port range
+      - "127.0.0.1:4566:4566"            # LocalStack Edge Proxy
+    environment:
+      - LOCALSTACK_HOST=localhost.localstack.cloud
+      - AWS_ACCESS_KEY_ID=key
+      - AWS_SECRET_ACCESS_KEY=secret
+      - AWS_DEFAULT_REGION=eu-west-1
+      - LAMBDA_EXECUTOR=docker
+      - SERVICES=cloudformation,dynamodb,cloudwatch
+      - DEBUG=true
+      - DYNAMODB_SHARE_DB=1
+      - DYNAMODB_HEAP_SIZE=1G
+    volumes:
+      - "$PWD/tmp/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - shared_network
+    extra_hosts:
+      - "localhost.localstack.cloud:127.0.0.1"  # Alias for LocalStack
