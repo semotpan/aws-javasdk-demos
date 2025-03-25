@@ -84,16 +84,14 @@ public class Flight {
                   Integer totalSeats, Integer availableSeats, Integer heldSeats,
                   Long version, Map<String, String> claimedSeatMap) {
 
-        var primaryKey = new FlightPrimaryKey(routeByDay, departureTime);
-
-        this.routeByDay = primaryKey.getPartitionKey();
-        this.departureTime = primaryKey.getSortKey();
-        this.flightNumber = requireNonNull(flightNumber, "flightNumber cannot be null");
-        this.airplaneModel = requireNonNull(airplaneModel, "airplaneModel cannot be null");
-        this.totalSeats = requireNonNull(totalSeats, "totalSeats cannot be null");
-        this.availableSeats = requireNonNull(availableSeats, "availableSeats cannot be null");
+        this.routeByDay = routeByDay;
+        this.departureTime = departureTime;
+        this.flightNumber = flightNumber;
+        this.airplaneModel = airplaneModel;
+        this.totalSeats = totalSeats;
+        this.availableSeats = availableSeats;
         this.version = version;
-        this.heldSeats = isNull(heldSeats) ? 0 : heldSeats;
+        this.heldSeats = heldSeats;
 
         this.claimedSeatMap = isNull(claimedSeatMap) ? new HashMap<>() : claimedSeatMap;
     }

@@ -5,6 +5,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.airlinesample.ddbops.domain.Booking.*;
 
@@ -12,17 +13,21 @@ final class BookingMapper {
 
     static Map<String, AttributeValue> toDDBModel(final Booking booking) {
         var bookingAttributes = new HashMap<String, AttributeValue>();
-        bookingAttributes.put(CUSTOMER_EMAIL_FIELD_NAME, AttributeValue.builder().s(booking.getCustomerEmail()).build());
-        bookingAttributes.put(BOOKING_ID_FIELD_NAME, AttributeValue.builder().s(booking.getBookingID()).build());
-        bookingAttributes.put(FLIGHT_NUMBER_FIELD_NAME, AttributeValue.builder().s(booking.getFlightNumber()).build());
-        bookingAttributes.put(SOURCE_FIELD_NAME, AttributeValue.builder().s(booking.getSource()).build());
-        bookingAttributes.put(DESTINATION_FIELD_NAME, AttributeValue.builder().s(booking.getDestination()).build());
-        bookingAttributes.put(DEPARTURE_DATE_TIME_FIELD_NAME, AttributeValue.builder().n(booking.getDepartureDateTime().toString()).build());
-        bookingAttributes.put(FARE_CLASS_FIELD_NAME, AttributeValue.builder().s(booking.getFareClass()).build());
 
+        // Populate required attributes
+        bookingAttributes.put(CUSTOMER_EMAIL_FIELD_NAME, AttributeValue.fromS(booking.getCustomerEmail()));
+        bookingAttributes.put(BOOKING_ID_FIELD_NAME, AttributeValue.fromS(booking.getBookingID()));
+        bookingAttributes.put(FLIGHT_NUMBER_FIELD_NAME, AttributeValue.fromS(booking.getFlightNumber()));
+        bookingAttributes.put(SOURCE_FIELD_NAME, AttributeValue.fromS(booking.getSource()));
+        bookingAttributes.put(DESTINATION_FIELD_NAME, AttributeValue.fromS(booking.getDestination()));
+        bookingAttributes.put(DEPARTURE_DATE_TIME_FIELD_NAME, AttributeValue.fromN(booking.getDepartureDateTime().toString()));
+        bookingAttributes.put(FARE_CLASS_FIELD_NAME, AttributeValue.fromS(booking.getFareClass()));
+
+        // Optionally add seat number if present
         if (booking.hasSeatNumber()) {
-            bookingAttributes.put(SEAT_NUMBER_FIELD_NAME, AttributeValue.builder().s(booking.getSeatNumber()).build());
+            bookingAttributes.put(SEAT_NUMBER_FIELD_NAME, AttributeValue.fromS(booking.getSeatNumber()));
         }
+
         return bookingAttributes;
     }
 
@@ -40,18 +45,15 @@ final class BookingMapper {
     }
 
     private static String safeStringRead(Map<String, AttributeValue> row, String fieldName) {
-        if (row.containsKey(fieldName)) {
-            return row.get(fieldName).s();
-        }
-
-        return null;
+        return Optional.ofNullable(row.get(fieldName))
+                .map(AttributeValue::s)
+                .orElse(null);
     }
 
     private static Long safeLongRead(Map<String, AttributeValue> row, String fieldName) {
-        if (row.containsKey(fieldName)) {
-            return Long.parseLong(row.get(fieldName).n());
-        }
-
-        return null;
+        return Optional.ofNullable(row.get(fieldName))
+                .map(AttributeValue::n)
+                .map(Long::parseLong)
+                .orElse(null);
     }
 }

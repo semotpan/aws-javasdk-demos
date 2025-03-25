@@ -11,7 +11,7 @@ public class SampleDataDynamoPopulate {
         var sampleDataDynamoPopulate = new SampleDataDynamoPopulate();
 
         if (sampleDataDynamoPopulate.populated) {
-            System.out.println("Data dynamo db populated!");
+            System.out.println("In memory data inserted!");
         }
     }
 

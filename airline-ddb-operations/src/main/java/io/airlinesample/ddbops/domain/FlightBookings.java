@@ -2,29 +2,69 @@ package io.airlinesample.ddbops.domain;
 
 import java.util.Optional;
 
+/**
+ * Interface for flight booking operations, providing methods for
+ * querying and transactional booking flights in a consistent manner.
+ */
 public interface FlightBookings {
 
+    /**
+     * Finds a flight by its primary key.
+     *
+     * @param primaryKey the primary key of the flight
+     * @return an {@code Optional} containing the flight if found, or empty otherwise
+     */
     Optional<Flight> findFlight(FlightPrimaryKey primaryKey);
 
+    /**
+     * Finds a booking by the customer's email and booking ID.
+     *
+     * @param customerEmail Partition Key
+     * @param bookingID     Sort Key
+     * @return an {@code Optional} containing the booking if found, or empty otherwise
+     */
     Optional<Booking> findBooking(String customerEmail, String bookingID);
 
+    /**
+     * Performs a transactional operation to book a flight.
+     * This operation decrements available seats and, optionally, assigns a seat.
+     *
+     * @param booking the booking details
+     * @param flight  the flight details
+     * @return a {@code TransactSummary} summarizing the transaction outcome
+     */
     TransactSummary transactBookFlight(Booking booking, Flight flight);
 
+    /**
+     * Interface for summarizing the result of a flight booking transaction.
+     */
     interface TransactSummary {
 
-        // in case of success
-        boolean isSuccess();
+        /**
+         * Checks if the transaction was successful.
+         */
+        boolean success();
 
-        // In case of ConditionExpressions: it could be OptimisticLocking or other checks
-        boolean isPreconditionFailed();
+        /**
+         * Indicates a precondition failure, such as insufficient seats or conflicts.
+         */
+        boolean preconditionFailed();
 
-        // in case of ConditionExpressions, or in case of timeouts or other cancellations
-        boolean isTransactionCancelled();
+        /**
+         * Indicates that the transaction was cancelled, either due to
+         * condition expression failures or timeouts.
+         */
+        boolean transactionCancelled();
 
-        // Handle DynamoDB-specific errors such as network issues or invalid input
-        boolean isGenericFailure();
+        /**
+         * Indicates a generic failure, such as network issues or invalid input.
+         */
+        boolean genericFailure();
 
-        // Reason message
+        /**
+         * Provides a reason for the failure, if applicable.
+         */
         String failureReason();
     }
 }
+

@@ -5,6 +5,7 @@ import io.airlinesample.ddbops.domain.FlightPrimaryKey;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 final class FlightMapper {
@@ -27,15 +28,35 @@ final class FlightMapper {
         }
 
         return Flight.mapBuilder()
-                .routeByDay(row.get(Flight.ROUTE_BY_DAY_FIELD_NAME).s()) // FIXME safe conversion?
-                .departureTime(row.get(Flight.DEPARTURE_TIME_FIELD_NAME).s())
-                .flightNumber(row.get(Flight.FLIGHT_NUMBER_FIELD_NAME).s())
-                .airplaneModel(row.get(Flight.AIRPLANE_MODEL_FIELD_NAME).s())
-                .totalSeats(Integer.parseInt(row.get(Flight.TOTAL_SEATS_FIELD_NAME).n()))
-                .availableSeats(Integer.parseInt(row.get(Flight.AVAILABLE_SEATS_FIELD_NAME).n()))
-                .heldSeats(Integer.parseInt(row.get(Flight.HELD_SEATS_FIELD_NAME).n()))
-                .version(Long.parseLong(row.get(Flight.VERSION_FIELD_NAME).n()))
+                .routeByDay(safeStringRead(row, Flight.ROUTE_BY_DAY_FIELD_NAME)) // FIXME safe conversion?
+                .departureTime(safeStringRead(row, Flight.DEPARTURE_TIME_FIELD_NAME))
+                .flightNumber(safeStringRead(row, Flight.FLIGHT_NUMBER_FIELD_NAME))
+                .airplaneModel(safeStringRead(row, Flight.AIRPLANE_MODEL_FIELD_NAME))
+                .totalSeats(safeIntegerRead(row, Flight.TOTAL_SEATS_FIELD_NAME))
+                .availableSeats(safeIntegerRead(row, Flight.AVAILABLE_SEATS_FIELD_NAME))
+                .heldSeats(safeIntegerRead(row, Flight.HELD_SEATS_FIELD_NAME))
+                .version(safeLongRead(row, Flight.VERSION_FIELD_NAME))
                 .claimedSeatMap(claimedSeatMap)
                 .build();
+    }
+
+    private static String safeStringRead(Map<String, AttributeValue> row, String fieldName) {
+        return Optional.ofNullable(row.get(fieldName))
+                .map(AttributeValue::s)
+                .orElse(null);
+    }
+
+    private static Long safeLongRead(Map<String, AttributeValue> row, String fieldName) {
+        return Optional.ofNullable(row.get(fieldName))
+                .map(AttributeValue::n)
+                .map(Long::parseLong)
+                .orElse(null);
+    }
+
+    private static Integer safeIntegerRead(Map<String, AttributeValue> row, String fieldName) {
+        return Optional.ofNullable(row.get(fieldName))
+                .map(AttributeValue::n)
+                .map(Integer::parseInt)
+                .orElse(null);
     }
 }

@@ -7,23 +7,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class NoLockingBookFlightService implements BookFlightUseCase {
 
-    private final FlightBookings simpleClientBookFlightBookings;
+    private final FlightBookings flightBookings;
 
     @Override
     public boolean bookFlight(Booking booking) {
-        var transactSummary = simpleClientBookFlightBookings.transactBookFlight(booking, null);
+        var transactSummary = flightBookings.transactBookFlight(booking, null);
         log(transactSummary);
-        return transactSummary.isSuccess();
+        return transactSummary.success();
 
     }
 
     private void log(FlightBookings.TransactSummary transactSummary) {
-        if (transactSummary.isSuccess()) {
+        if (transactSummary.success()) {
             System.out.println("Flight booked successfully.");
             return;
         }
 
-        if (transactSummary.isPreconditionFailed()) {
+        if (transactSummary.preconditionFailed()) {
             System.out.println("No seats available or specified seat already taken.");
             System.err.println("Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...");
             return;

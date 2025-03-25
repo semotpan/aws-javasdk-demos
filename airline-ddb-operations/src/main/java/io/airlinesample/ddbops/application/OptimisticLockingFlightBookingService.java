@@ -5,7 +5,7 @@ import io.airlinesample.ddbops.domain.FlightBookings;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class BookFlightOptimisticLockingService implements BookFlightUseCase {
+public final class OptimisticLockingFlightBookingService implements BookFlightUseCase {
 
     private final FlightBookings flightBookings;
 
@@ -43,16 +43,16 @@ public final class BookFlightOptimisticLockingService implements BookFlightUseCa
         // FIXME: in case of retry consider the result of this
         var transactSummary = flightBookings.transactBookFlight(booking, flight);
         log(transactSummary);
-        return transactSummary.isSuccess();
+        return transactSummary.success();
     }
 
     private void log(FlightBookings.TransactSummary transactSummary) {
-        if (transactSummary.isSuccess()) {
+        if (transactSummary.success()) {
             System.out.println("Flight booked successfully.");
             return;
         }
 
-        if (transactSummary.isPreconditionFailed()) {
+        if (transactSummary.preconditionFailed()) {
             System.err.println("Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...");
             return;
         }
