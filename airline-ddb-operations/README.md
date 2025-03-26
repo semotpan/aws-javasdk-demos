@@ -76,7 +76,7 @@ In memory data inserted!
 ### 4️⃣ Run the Scenario Using Optimistic Locking (EnhancedClient, Less Efficient)
 Run the class for the Optimistic Locking scenario using the Enhanced Client (less efficient implementation):
 ```shell
-io.airlinesample.ddbops.BestPracticeBookFlightScenarioRunner#main
+io.airlinesample.ddbops.EnhancedClientOptimisticLockingBookFlightScenarioRunner#main
 ```
 Expected Output:
 ```shell
