@@ -2,11 +2,30 @@
 
 ### Analyzed Use Case: Booking a Flight (with or without a specified seat)
 
-#### DynamoDB Workflow Operations
-![booking-workflows.png](booking-workflows.png)
+###### _Tech Stack: Java 21, AWS SDK, and LocalStack_
+
+---
+
+This use case demonstrates how to implement AWS DynamoDB transactions using the [Java SDK V2](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/welcome.html), `DynamoClient`, and `EnhancedDynamoClient`. It covers three scenarios for implementing transactional integrity:
+
+1. **EnhancedDynamoClient with `@DynamoDBAttributeVersion`**: This scenario delegates data integrity to `EnhancedDynamoClient` with its built-in mechanism, which adds version checking on expression conditions. Learn more in the [Enhanced Client Documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.HowItWorks.html).
+
+2. **DynamoClient with manual versioning**: This approach mimics the behavior of `EnhancedDynamoClient` using the `@DynamoDBAttributeVersion`, but it gives more control over features like `ProjectionExpression`, improving the cost efficiency of consistent reads. For more on DynamoDB Expressions, check the [DynamoDB Expressions Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.html).
+
+3. **Best practices for DynamoDB**: This scenario avoids the anti-pattern of the `read-modify-write` cycle. It does not perform any checks on the current version but relies entirely on DynamoDB for data integrity via expression conditions. This is the most cost-efficient implementation, but it requires careful data model design to ensure its effectiveness. For best practices in DynamoDB, refer to [Best Practices for DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/BestPractices.html).
+
+### Context:
+
+> **Use case**: _As a passenger, I want to book a flight with a specified seat or not._
+
+### Task:
+Use DynamoDB transactions to ensure data consistency. For more on DynamoDB transactions, visit the [Transactions Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Transactions.html) and the [DynamoDB TransactWriteItems API Reference](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html).
 
 #### Database Schema
 ![database-schema.png](database-schema.png)
+
+#### DynamoDB Workflow Operations
+![booking-workflows.png](booking-workflows.png)
 
 ## 📌 Tech Stack
 
