@@ -3,7 +3,9 @@ package io.airlinesample.ddbops.domain;
 import lombok.Builder;
 import lombok.Value;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
@@ -26,6 +28,10 @@ public class FlightPrimaryKey {
     String partitionKey;
     String sortKey;
 
+    String sourceAirportCode;
+    String destinationAirportCode;
+    LocalDateTime departureDateTime;
+
     @Builder
     public FlightPrimaryKey(String sourceAirportCode, String destinationAirportCode, LocalDateTime departureDateTime) {
         requireNonNull(sourceAirportCode, "sourceAirportCode cannot be null");
@@ -38,6 +44,10 @@ public class FlightPrimaryKey {
 
         // SK: HHmm, e.g. 0800
         this.sortKey = departureDateTime.toLocalTime().format(DateTimeFormatter.ofPattern(DEPARTURE_TIME_FORMATTER));
+
+        this.sourceAirportCode = sourceAirportCode;
+        this.destinationAirportCode = destinationAirportCode;
+        this.departureDateTime = departureDateTime;
     }
 
     @Builder
@@ -55,5 +65,13 @@ public class FlightPrimaryKey {
             throw new IllegalArgumentException("Invalid sort key: " + sortKey + ", it should be valid minutes and seconds (e.g. 0840).");
         }
         this.sortKey = sortKey;
+
+
+        var pkSlit = partitionKey.split("#");
+
+
+        this.sourceAirportCode = pkSlit[0];
+        this.destinationAirportCode = pkSlit[1];
+        this.departureDateTime = LocalDateTime.of(LocalDate.parse(pkSlit[2], DateTimeFormatter.ofPattern(DEPARTURE_DATE_FORMATTER)), LocalTime.parse(sortKey, DateTimeFormatter.ofPattern(DEPARTURE_TIME_FORMATTER)));
     }
 }

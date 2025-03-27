@@ -33,6 +33,8 @@ public class EnhancedClientOptimisticLockingBookFlightScenarioRunner {
 
     public static void main(String[] args) {
 
+        System.out.println("\n🚀 Starting Optimistic Locking Booking Scenario (using EnhancedClient) ...");
+
         try (var dynamoDbClient = AwsClientProvider.dynamoDbClient()) {
 
             var enhancedClient = AwsClientProvider.dynamoDbEnhancedClient(dynamoDbClient);
@@ -40,15 +42,14 @@ public class EnhancedClientOptimisticLockingBookFlightScenarioRunner {
             var bookFlightUseCase = new OptimisticLockingFlightBookingService(enhancedClientFlightBookingsRepository);
 
             var bookings = new CopyOnWriteArrayList<Booking>();
-            // Create booking tasks
+
             Runnable bookingTask = () -> {
-                // Create a new booking that simulates a conflict (same seat)
-                // Amsterdam Schiphol (AMS) → Frankfurt Airport (FRA) Departure DateTime: 2025-05-15T08:00
-                // Passenger: Sherlock Homes
-                // Seat: 2D
+                var bookingId = UUID.randomUUID().toString();
+                System.out.println("\n🛫 Attempting to book a flight (Thread: " + Thread.currentThread().getName() + ")");
+
                 var newBooking = Booking.builder()
                         .customerEmail("sherlock.homes@email.com")
-                        .bookingID(UUID.randomUUID().toString())
+                        .bookingID(bookingId)
                         .flightNumber("KL456")
                         .source("AMS")
                         .destination("FRA")
@@ -60,34 +61,47 @@ public class EnhancedClientOptimisticLockingBookFlightScenarioRunner {
                 bookings.add(newBooking);
 
                 var success = bookFlightUseCase.bookFlight(newBooking);
-                System.out.println(Thread.currentThread().getName() + " - Booking success: " + success);
+                System.out.println(
+                        (success ? "✅ " : "❌ ") + "Booking (ID: " + bookingId + ") result: " + success
+                                + " [Thread: " + Thread.currentThread().getName() + "]"
+                );
             };
 
-            // Execute two concurrent booking tasks using CompletableFuture
             var futures = List.of(
                     CompletableFuture.runAsync(bookingTask),
                     CompletableFuture.runAsync(bookingTask)
             );
 
-            // Wait for both tasks to complete before querying the updated flight
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                     .thenRun(() -> {
+                        System.out.println("\n📊 Fetching updated flight and booking details...");
+
                         var primaryKey = FlightPrimaryKey.builder()
                                 .sourceAirportCode("AMS")
                                 .destinationAirportCode("FRA")
                                 .departureDateTime(LocalDateTime.of(2025, 5, 15, 8, 0))
                                 .build();
-                        System.out.println("Database stats:");
-                        // Use the enhanced client to query flight details after booking attempts
-                        enhancedClientFlightBookingsRepository.findFlight(primaryKey)
-                                .ifPresent(System.out::println); // Print the updated flight details
 
-                        // Query and print the details of all attempted bookings
+                        System.out.println("\n✈️ Updated Flight Information:");
+                        enhancedClientFlightBookingsRepository.findFlight(primaryKey)
+                                .ifPresentOrElse(
+                                        flight -> System.out.println("📌 " + flight),
+                                        () -> System.out.println("⚠️ Flight details not found!")
+                                );
+
+                        System.out.println("\n📌 Attempted Bookings:");
                         bookings.forEach(booking ->
                                 enhancedClientFlightBookingsRepository.findBooking(booking.getCustomerEmail(), booking.getBookingID())
-                                        .ifPresent(System.out::println));
+                                        .ifPresentOrElse(
+                                                storedBooking -> System.out.println("✅ " + storedBooking),
+                                                () -> System.out.println("❌ Booking not found in DB: " + booking.getBookingID())
+                                        )
+                        );
                     })
-                    .join(); // Ensures the main thread waits for all async tasks to finish
+                    .join();
+
+            System.out.println("\n🏁 Booking scenario completed.");
         }
     }
 }
+

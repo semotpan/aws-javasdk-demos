@@ -142,4 +142,8 @@ public class Flight {
     public void incrementHeldSeats() {
         this.heldSeats++;
     }
+
+    public FlightPrimaryKey getPrimaryKey() {
+        return new FlightPrimaryKey(routeByDay, departureTime);
+    }
 }

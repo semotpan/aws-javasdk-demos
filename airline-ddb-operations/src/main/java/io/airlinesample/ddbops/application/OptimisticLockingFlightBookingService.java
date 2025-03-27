@@ -15,21 +15,21 @@ public final class OptimisticLockingFlightBookingService implements BookFlightUs
         // Step 1: Fetch the flight information from DynamoDB based on booking details
         var possibleFlight = flightBookings.findFlight(booking.flightPrimaryKey());
         if (possibleFlight.isEmpty()) {
-            System.err.println("Flight not available for booking.");
+            System.err.println("❌ Flight not available for booking.");
             return false;  // Flight does not exist or could not be retrieved
         }
         var flight = possibleFlight.get();
 
         // Step 2: Check if the flight has available seats
         if (!flight.anySeatAvailable()) {
-            System.err.println("No available seats for the flight: " + flight.getFlightNumber());
+            System.err.println("❌ No available seats for the flight: " + flight.getFlightNumber());
             return false;
         }
 
         if (booking.hasSeatNumber()) {
             // Step 3: Check if the requested seat is available and claim it
             if (!flight.addSeatIfAvailable(booking.getSeatNumber(), booking.getBookingID())) {
-                System.err.println("The requested seat is already claimed.");
+                System.err.println("⚠️ The requested seat is already claimed.");
                 return false;
             }
         } else {
@@ -48,15 +48,15 @@ public final class OptimisticLockingFlightBookingService implements BookFlightUs
 
     private void log(FlightBookings.TransactSummary transactSummary) {
         if (transactSummary.success()) {
-            System.out.println("Flight booked successfully.");
+            System.out.println("✅ Flight booked successfully.");
             return;
         }
 
         if (transactSummary.preconditionFailed()) {
-            System.err.println("Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...");
+            System.err.println("⚠️ Optimistic locking failed: Another user modified the flight concurrently. Consider attempting again...");
             return;
         }
 
-        System.err.println(transactSummary.failureReason());
+        System.err.println("❌ " + transactSummary.failureReason());
     }
 }

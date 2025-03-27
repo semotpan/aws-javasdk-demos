@@ -63,14 +63,32 @@ aws --profile localstack --endpoint-url=http://localhost:4566 cloudformation dep
     --stack-name airline-ddb-ops
 ```
 
-### 3️⃣ Run App Data Population
+### 3️⃣ Run App for initiating the Airline data
 Run the following class to populate sample data:
 ```shell
-io.airlinesample.ddbops.SampleDataDynamoPopulate#main
+io.airlinesample.ddbops.AirlineDynamoDbDataInitializer#main
 ```
 Expected Output:
 ```shell
-In memory data inserted!
+=========== 🛫 Airline Data Summary 🛬 ===========
+
+👤 Inserted Passengers: 4
+✈️ Inserted Flights: 5
+📌 Inserted Bookings: 4
+
+===== ✈️ Flight Details =====
+🛫 LHR → 🛬 CDG | Flight: BA123 | Model: Airbus A320 | TotalSeats: 180 | AvailableSeats: 180 | ClaimedSeatMap: {} 
+🛫 AMS → 🛬 FRA | Flight: KL456 | Model: Boeing 737-800 | TotalSeats: 189 | AvailableSeats: 150 | ClaimedSeatMap: {1A=0159b675-909c-72bc-bd49-07b67670039g} 
+🛫 MAD → 🛬 LIS | Flight: IB789 | Model: Airbus A320 | TotalSeats: 180 | AvailableSeats: 60 | ClaimedSeatMap: {2B=0159b66b-9276-7e44-bd46-88565729fc71} 
+🛫 FCO → 🛬 MUC | Flight: LH234 | Model: Airbus A320 | TotalSeats: 180 | AvailableSeats: 175 | ClaimedSeatMap: {3C=0159b66d-30dc-7de9-9671-46a139874465} 
+🛫 BER → 🛬 VIE | Flight: OS567 | Model: Embraer E195 | TotalSeats: 120 | AvailableSeats: 2 | ClaimedSeatMap: {4D=0159b674-ddfs-7134-b45fe-8c1da462rec3} 
+
+===== 📌 Booking Details =====
+📌 Passenger: jxn.stove@email.com  | Flight: KL456 | Seat: 1A | Date: 2025-05-15 08:00:00
+📌 Passenger: jxn.stove@email.com  | Flight: IB789 | Seat: 2B | Date: 2025-06-01 12:00:00
+📌 Passenger: harry.soktor@email.com | Flight: LH234 | Seat: 3C | Date: 2025-08-01 14:15:00
+📌 Passenger: harry.soktor@email.com | Flight: OS567 | Seat: 4D | Date: 2026-09-21 17:30:00
+✅ Airline data inserted into DynamoDB successfully!
 ```
 
 ### 4️⃣ Run the Scenario Using Optimistic Locking (EnhancedClient, Less Efficient)
@@ -80,13 +98,26 @@ io.airlinesample.ddbops.EnhancedClientOptimisticLockingBookFlightScenarioRunner#
 ```
 Expected Output:
 ```shell
-Flight booked successfully.
-ForkJoinPool.commonPool-worker-2 - Booking success: true
-Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...
-ForkJoinPool.commonPool-worker-1 - Booking success: false
-Database stats:
-Flight(routeByDay=AMS#FRA#2025-05-15, departureTime=0800, flightNumber=KL456, airplaneModel=Boeing 737-800, totalSeats=189, availableSeats=149, heldSeats=10, version=2, claimedSeatMap={1A=0159b675-909c-72bc-bd49-07b67670039g, 2D=b155feaa-b938-4992-bdd8-35395dccc47d})
-Booking(customerEmail=sherlock.homes@email.com, bookingID=b155feaa-b938-4992-bdd8-35395dccc47d, flightNumber=KL456, source=AMS, destination=FRA, departureDateTime=1747296000, seatNumber=2D, fareClass=Economy)
+🚀 Starting Optimistic Locking Booking Scenario (using EnhancedClient) ...
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-2)
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-1)
+✅ Flight booked successfully.
+✅ Booking (ID: 3ffcc6c1-0680-44e1-ac30-ef79c9decd83) result: true [Thread: ForkJoinPool.commonPool-worker-2]
+❌ Booking (ID: 3bddcef5-1276-4e13-af02-d99aa4568e07) result: false [Thread: ForkJoinPool.commonPool-worker-1]
+
+📊 Fetching updated flight and booking details...
+
+✈️ Updated Flight Information:
+📌 Flight(routeByDay=AMS#FRA#2025-05-15, departureTime=0800, flightNumber=KL456, airplaneModel=Boeing 737-800, totalSeats=189, availableSeats=149, heldSeats=10, version=2, claimedSeatMap={1A=0159b675-909c-72bc-bd49-07b67670039g, 2D=3ffcc6c1-0680-44e1-ac30-ef79c9decd83})
+
+📌 Attempted Bookings:
+⚠️ Optimistic locking failed: Another user modified the flight concurrently. Consider attempting again...
+✅ Booking(customerEmail=sherlock.homes@email.com, bookingID=3ffcc6c1-0680-44e1-ac30-ef79c9decd83, flightNumber=KL456, source=AMS, destination=FRA, departureDateTime=1747296000, seatNumber=2D, fareClass=Economy)
+❌ Booking not found in DB: 3bddcef5-1276-4e13-af02-d99aa4568e07
+
+🏁 Booking scenario completed.
 ```
 
 ### 5️⃣ Run the Scenario Using Optimistic Locking (DynamoClient, More Efficient)
@@ -96,13 +127,27 @@ io.airlinesample.ddbops.SimpleClientOptimisticLockingBookFlightScenarioRunner#ma
 ```
 Expected Output:
 ```shell
-Flight booked successfully.
-ForkJoinPool.commonPool-worker-1 - Booking success: true
-Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...
-ForkJoinPool.commonPool-worker-2 - Booking success: false
-Database stats:
-Flight(routeByDay=null, departureTime=null, flightNumber=null, airplaneModel=null, totalSeats=180, availableSeats=179, heldSeats=0, version=2, claimedSeatMap={4C=e594fd16-6462-4acd-906e-75ef290f45f5})
-Booking(customerEmail=sherlock.homes@email.com, bookingID=e594fd16-6462-4acd-906e-75ef290f45f5, flightNumber=null, source=null, destination=null, departureDateTime=1765792800, seatNumber=null, fareClass=null)
+🚀 Starting Simple Client Optimistic Locking Booking Scenario (using DynamoClient) ...
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-1)
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-2)
+✅ Flight booked successfully.
+✅ Booking (ID: 2a85b26b-61b9-45de-a00e-5169dc6e2e8a) result: true [Thread: ForkJoinPool.commonPool-worker-2]
+⚠️ Optimistic locking failed: Another user modified the flight concurrently. Consider attempting again...
+❌ Booking (ID: 4a0278d6-c333-480b-8ec1-e0bd0467c947) result: false [Thread: ForkJoinPool.commonPool-worker-1]
+
+📊 Fetching updated flight and booking details...
+
+✈️ Updated Flight Information:
+📌 Flight(routeByDay=null, departureTime=null, flightNumber=null, airplaneModel=null, totalSeats=180, availableSeats=179, heldSeats=0, version=2, claimedSeatMap={4C=2a85b26b-61b9-45de-a00e-5169dc6e2e8a})
+
+📌 Attempted Bookings:
+❌ Booking not found in DB: 4a0278d6-c333-480b-8ec1-e0bd0467c947
+✅ Booking(customerEmail=sherlock.homes@email.com, bookingID=2a85b26b-61b9-45de-a00e-5169dc6e2e8a, flightNumber=null, source=null, destination=null, departureDateTime=1765792800, seatNumber=null, fareClass=null)
+
+🏁 Booking scenario completed.
+
 ```
 
 ### 6️⃣ Run the Scenario Using Conditional Expressions (Most Efficient Implementation)
@@ -112,14 +157,27 @@ io.airlinesample.ddbops.BestPracticeBookFlightScenarioRunner#main
 ```
 Expected Output:
 ```shell
-Flight booked successfully.
-ForkJoinPool.commonPool-worker-2 - Booking success: true
-No seats available or specified seat already taken.
-ForkJoinPool.commonPool-worker-1 - Booking success: false
-Database stats:
-Optimistic locking failed: Another user modified the flight concurrently. Consider attemting again ...
-Flight(routeByDay=LHR#CDG#2025-12-15, departureTime=1000, flightNumber=BA123, airplaneModel=Airbus A320, totalSeats=180, availableSeats=178, heldSeats=0, version=3, claimedSeatMap={2C=20b7981d-a4f5-4adc-93f2-2f5032a8fce8, 4C=e594fd16-6462-4acd-906e-75ef290f45f5})
-Booking(customerEmail=sherlock.homes@email.com, bookingID=20b7981d-a4f5-4adc-93f2-2f5032a8fce8, flightNumber=BA123, source=LHR, destination=CDG, departureDateTime=1765792800, seatNumber=2C, fareClass=Economy)`
+🚀 Starting Best Practice Flight Booking Scenario (using DynamoClient with ConditionalExpression) ...
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-1)
+
+🛫 Attempting to book a flight (Thread: ForkJoinPool.commonPool-worker-2)
+✅ Flight booked successfully.
+✅ Booking (ID: bb9310d9-34c6-477e-82ef-eb9d1d55979e) result: true [Thread: ForkJoinPool.commonPool-worker-1]
+⚠️ No seats available or specified seat already taken.
+❌ Booking (ID: 16c14775-454f-4039-90db-bda89f7fe845) result: false [Thread: ForkJoinPool.commonPool-worker-2]
+
+📊 Fetching updated flight and booking details...
+
+✈️ Updated Flight Information:
+❌ Optimistic locking failed: Another user modified the flight concurrently. Consider attempting again...
+📌 Flight(routeByDay=LHR#CDG#2025-12-15, departureTime=1000, flightNumber=BA123, airplaneModel=Airbus A320, totalSeats=180, availableSeats=178, heldSeats=0, version=3, claimedSeatMap={2C=bb9310d9-34c6-477e-82ef-eb9d1d55979e, 4C=2a85b26b-61b9-45de-a00e-5169dc6e2e8a})
+
+📌 Attempted Bookings:
+✅ Booking(customerEmail=sherlock.homes@email.com, bookingID=bb9310d9-34c6-477e-82ef-eb9d1d55979e, flightNumber=BA123, source=LHR, destination=CDG, departureDateTime=1765792800, seatNumber=2C, fareClass=Economy)
+❌ Booking not found in DB: 16c14775-454f-4039-90db-bda89f7fe845
+
+🏁 Booking scenario completed.
 ```
 
 ### 7️⃣ Delete CloudFormation Stack
